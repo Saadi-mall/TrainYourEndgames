@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { StockfishEngine } from "@/lib/stockfishEngine";
+import { StockfishEngine, type AnalysisResult } from "@/lib/stockfishEngine";
+
+/** Depth used when verifying/classifying a position's objective result. Independent of
+ * play strength -- this always searches at full strength for an accurate read. */
+export const EVAL_DEPTH = 20;
 
 export function useStockfish() {
   const engineRef = useRef<StockfishEngine | null>(null);
@@ -22,5 +26,10 @@ export function useStockfish() {
     return engineRef.current.getBestMove(fen, { depth, skillLevel });
   }
 
-  return { ready, getBestMove };
+  async function evaluatePosition(fen: string, depth: number = EVAL_DEPTH): Promise<AnalysisResult | null> {
+    if (!engineRef.current) return null;
+    return engineRef.current.analyze(fen, depth, 20);
+  }
+
+  return { ready, getBestMove, evaluatePosition };
 }

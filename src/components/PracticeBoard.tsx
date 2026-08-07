@@ -5,7 +5,6 @@ import { Chess, type Square } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import type { Position } from "@/types/position";
 import type { GameResult } from "@/lib/session";
-import { useStockfish } from "@/hooks/useStockfish";
 import { depthForSkill } from "@/lib/engineSettings";
 
 interface PracticeBoardProps {
@@ -13,6 +12,10 @@ interface PracticeBoardProps {
   /** Which color the human plays. Defaults to the position's recorded side to move. */
   userColor?: "white" | "black";
   skillLevel: number;
+  /** Shared engine instance from the parent, so the same worker serves both evaluation
+   * (e.g. the eval-guess quiz) and gameplay instead of spinning up a second one. */
+  engineReady: boolean;
+  getBestMove: (fen: string, depth: number, skillLevel: number) => Promise<string | null>;
   onGameEnd?: (result: { actualResult: GameResult; description: string }) => void;
 }
 
@@ -36,14 +39,20 @@ function describeGameOver(g: Chess): { description: string; winner: "white" | "b
   return { description: "", winner: null };
 }
 
-export default function PracticeBoard({ position, userColor, skillLevel, onGameEnd }: PracticeBoardProps) {
+export default function PracticeBoard({
+  position,
+  userColor,
+  skillLevel,
+  engineReady,
+  getBestMove,
+  onGameEnd,
+}: PracticeBoardProps) {
   const initialColor: "white" | "black" = userColor ?? position.side_to_move ?? "white";
   const [game, setGame] = useState<Chess | null>(() => safeChess(position.fen));
   const [orientation, setOrientation] = useState<"white" | "black">(initialColor);
   const [status, setStatus] = useState<string>("");
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [engineThinking, setEngineThinking] = useState(false);
-  const { ready: engineReady, getBestMove } = useStockfish();
   const gameEndedRef = useRef(false);
 
   // reset the board whenever a new position is loaded
@@ -175,11 +184,7 @@ export default function PracticeBoard({ position, userColor, skillLevel, onGameE
 
       <div className="flex w-full max-w-[480px] items-center justify-between text-sm text-muted">
         <span>
-          {!engineReady
-            ? "Loading engine…"
-            : engineThinking
-              ? "Stockfish is thinking…"
-              : `Turn: ${game.turn() === "w" ? "White" : "Black"}`}
+          {!engineReady ? "Loading engine…" : engineThinking ? "Stockfish is thinking…" : ""}
         </span>
         <button
           type="button"
