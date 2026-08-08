@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import PracticeBoard from "@/components/PracticeBoard";
+import StaticBoard from "@/components/StaticBoard";
 import EvalGuess from "@/components/EvalGuess";
 import UserBadge from "@/components/UserBadge";
 import { allPositions, randomPosition } from "@/lib/positions";
@@ -194,6 +195,10 @@ export default function PracticeSession({ fromReviewQueue, categoryId = PAWN_END
               <div className="font-serif text-base text-foreground/90">{position.title_text}</div>
             )}
           </div>
+
+          {(phase.kind === "quiz" || phase.kind === "quiz-revealed") && (
+            <StaticBoard fen={position.fen} orientation={position.side_to_move ?? "white"} />
+          )}
 
           {phase.kind === "quiz" && (
             <EvalGuess
